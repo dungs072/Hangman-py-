@@ -1,7 +1,11 @@
+
+from glob import glob
 import pygame
 import os
 import button
+import my_text
 import quizz_manager
+import underscore_manager
 WIDTH, HEIGHT = 900,650
 WIN = pygame.display.set_mode((WIDTH,HEIGHT))
 pygame.display.set_caption("Hang man")
@@ -18,42 +22,79 @@ PILE = pygame.transform.scale(PILE_IMAGE,(600,300))
 BACKGROUND_TEXT = pygame.transform.scale(BACKGROUND_TEXT_IMAGE,(200,50))
 #load alpha button image
 alpha_images = [pygame.image.load(os.path.join('Assets\\Alphas',chr(x)+'.png')) for x in range(65,91)]
-
-#button class
-
-#load button     
-vertical_offset = 0
-horizontal_offset = 0 
+#load backend
+quizz_manage = quizz_manager.Quizz_manager()
+underscore_manage = underscore_manager.Undercore_manager(15,420,390,alpha_images)
+#buttons
 alpha_button = []
-for index, image in enumerate(alpha_images):
-    alpha_button.append(button.Button(100+horizontal_offset*75,450+vertical_offset,image,1))
-    horizontal_offset+=1
-    if(index==9 or index==19): 
-        vertical_offset +=60
-        horizontal_offset = 0
-        if index==19:
-            horizontal_offset = 2
-        
-def draw_window():
+#load text
+title_text = my_text.My_Text('',300,305,1,BACKGROUND_TEXT_IMAGE)   
+#level
+is_next_level = True
+answer = ''
+#check is right character in answer
+def has_right_character_in_answer(char: str):
+    global answer
+    return [i for i in range(0,len(answer)) if answer[i]==char]
+#subscribe event
+def on_char_button_clicked(infor):
+    
+    right_indexes = has_right_character_in_answer(infor)
+    for i in right_indexes:
+        underscore_manage.put_char_onto_underscore(infor,i)
+    
+def draw_window(): 
     WIN.fill(WHITE)
     
     WIN.blit(BACKGROUND_IMAGE,(0,0))
     WIN.blit(PILE,(100,25))
-    WIN.blit(BACKGROUND_TEXT,(350,305))
+    
+    title_text.draw(WIN)
     for button in alpha_button:
         button.draw(WIN)
+    underscore_manage.draw(WIN)
     pygame.display.update()
+    
+def start():
+#load button     
+    vertical_offset = 0
+    horizontal_offset = 0 
+    for index, image in enumerate(alpha_images):
+        alpha_button.append(button.Button(100+horizontal_offset*75,450+vertical_offset,image,1,chr(index+97)))
+        horizontal_offset+=1
+        if(index==9 or index==19): 
+            vertical_offset +=60
+            horizontal_offset = 0
+            if index==19:
+                horizontal_offset = 2
+      
+    #subscribe event
+   
+    for bt in alpha_button:
+        bt.subscribe(on_char_button_clicked)
+def create_level():
+    global is_next_level
+    global answer
+    if(is_next_level == False): return
+    (title,answer) = quizz_manage.get_quizz()
+    if(title==None and answer==None): return
+    print(answer)
+    is_next_level = False
+    title_text.set_title(title)
+    underscore_manage.set_quantity(len(answer))
+def update():
+    create_level()  
 #game loop
 def main():
     clock = pygame.time.Clock()
     run = True
+    start()
     while run:
         clock.tick(FPS)
         for event in pygame.event.get(): #catch events
             if event.type ==pygame.QUIT:
                 run = False
-        quizz_manage = quizz_manager()
-        (title,answer) = quizz_manage.get_quiz()
+        update()
         
         draw_window() 
                 

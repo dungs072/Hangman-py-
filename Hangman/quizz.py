@@ -10,9 +10,13 @@ class Quizz:
     
     def get_answer(self)->str:  
         choice = '-1'
-        while(choice in self.selected_answers and len(self.answers)!=len(self.selected_answers)):
+        while(len(self.answers)!=len(self.selected_answers)):
             choice = random.choice(self.answers)
+            if choice not in self.selected_answers:
+                break
         if choice!='-1':
             self.selected_answers.append(choice)
         return choice
+    def has_not_used_answer(self)->bool:
+        return len(self.answers)>len(self.selected_answers)
     

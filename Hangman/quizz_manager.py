@@ -1,7 +1,7 @@
 from quizz import Quizz
 import random
 
-class quizz_manager:
+class Quizz_manager:
     def __init__(self) -> None:
         self.dict_word = {}
         self.used_title = []
@@ -11,7 +11,7 @@ class quizz_manager:
         file = open('quizzes_text.txt')
         for line in file:
             infor = line.lstrip('-').split(':')
-            values = infor[1].split(', ')
+            values = infor[1].rstrip().split(', ')
             temp_quizz = Quizz(infor[0])
             for value in values:
                 temp_quizz.add_answer(value)
@@ -22,5 +22,6 @@ class quizz_manager:
         title = random.choice(list(self.dict_word))
         while not self.dict_word[title].has_not_used_answer() and len(self.dict_word)!=len(self.used_title):
             title = random.choice(list(self.dict_word))
+        if(len(self.dict_word)==len(self.used_title)): return (None,None)
         self.used_title.append(title)
         return (title,self.dict_word[title].get_answer())
