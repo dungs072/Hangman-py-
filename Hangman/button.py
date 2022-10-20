@@ -17,7 +17,7 @@ class Button():
         if self.rect.collidepoint(pos):
             if pygame.mouse.get_pressed()[0]==1 and self.clicked ==False: # 0 = left click, 1 = right click
                 self.clicked = True
-                if self.event_trigger!=None: self.event_trigger(self.infor)
+                if self.event_trigger!=None: self.event_trigger(self.infor, self.rect.x,self.rect.y)
         if pygame.mouse.get_pressed()[0] ==0: # left mouse is not pressed
             self.clicked = False
         #draw button on screen

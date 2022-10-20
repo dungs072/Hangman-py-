@@ -11,7 +11,7 @@ class Quizz_manager:
         file = open('quizzes_text.txt')
         for line in file:
             infor = line.lstrip('-').split(':')
-            values = infor[1].rstrip().split(', ')
+            values = infor[1].strip().split(', ')
             temp_quizz = Quizz(infor[0])
             for value in values:
                 temp_quizz.add_answer(value)
