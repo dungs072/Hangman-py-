@@ -20,3 +20,6 @@ class Quizz:
     def has_not_used_answer(self)->bool:
         return len(self.answers)>len(self.selected_answers)
     
+    def clear_selected_answers(self):
+        self.selected_answers.clear()
+    

@@ -31,3 +31,8 @@ class Quizz_manager:
             if self.dict_word[key].has_not_used_answer():
                 return False
         return True
+    
+    def clear_all_answers(self):
+        for value in self.used_title:
+            value.clear_selected_answers()
+        self.used_title.clear()
