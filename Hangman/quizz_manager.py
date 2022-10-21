@@ -20,8 +20,14 @@ class Quizz_manager:
                
     def get_quizz(self):
         title = random.choice(list(self.dict_word))
-        while not self.dict_word[title].has_not_used_answer() and len(self.dict_word)!=len(self.used_title):
+        if self.__is_full_quizz(): return (None,None)
+        while not self.dict_word[title].has_not_used_answer():
             title = random.choice(list(self.dict_word))
-        if(len(self.dict_word)==len(self.used_title)): return (None,None)
         self.used_title.append(title)
         return (title,self.dict_word[title].get_answer())
+    
+    def __is_full_quizz(self):
+        for key in self.dict_word:
+            if self.dict_word[key].has_not_used_answer():
+                return False
+        return True

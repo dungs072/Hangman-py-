@@ -1,5 +1,5 @@
 -body: eye, nose, tooth, hand, eyebrow, ear, mouth, ankle
--school: pencil, sharpener, eraser, ruler, scissors, chair, book, desk, pen,bag
+-school: pencil, sharpener, eraser, ruler, scissors, chair, book, desk, pen, bag
 -sports: ski, dive, skate, sail, football, basketball, piano, swim
--job: accountant, architect, dentist, farmer, firefighter, pilot, nurse, IT, teacher, police, mechanic
+-job: accountant, architect, dentist, farmer, firefighter, pilot, nurse, it, teacher, police, mechanic
 -food: egg, ham, sausages, toast, donut, bacon, sushi

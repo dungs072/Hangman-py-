@@ -30,5 +30,9 @@ class Undercore_manager():
         self.quantity = quantity
         self.__assign_underscore_image()
     def draw(self,WIN):
+        if len(self.underscores)==0: return
         for i in range(0,self.quantity):
             self.underscores[i].draw(WIN)
+    
+    def delete_old_underscores(self):
+        self.underscores = []

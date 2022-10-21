@@ -14,9 +14,9 @@ class My_Text():
     def draw(self,WIN):
         WIN.blit(self.background_image,(self.x,self.y))
         textTBD = self.text_font.render(self.title,1,(0,0,0))
-        posX = self.x+int(self.width/2)-int(textTBD.get_width()/2)
-        posY = self.y +int(self.height/2)-int(textTBD.get_height()/2)
         if(self.image_text==None):
+            posX = self.x+int(self.width/2)-int(textTBD.get_width()/2)
+            posY = self.y +int(self.height/2)-int(textTBD.get_height()/2)
             WIN.blit(textTBD,(posX,posY))
         else:
             WIN.blit(self.image_text,(self.x+7,self.y-25))
