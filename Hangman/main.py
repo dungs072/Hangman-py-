@@ -1,7 +1,8 @@
 
-import math
 import pygame
 import os
+from threading import Thread
+from time import sleep
 import button
 from coin_animation_manager import Coin_Animation_Manager
 import my_text
@@ -21,6 +22,7 @@ BLUE = (0,0,255)
 FPS = 60
 
 MAX_CHOICE = 7
+COST_SUGGESTION = 30
 
 DEFAULT_COIN_PER_LEVEL = 10
 
@@ -40,10 +42,17 @@ alpha_images = [pygame.image.load(os.path.join('Assets\\Alphas',chr(x)+'.png')) 
 #load man image
 man_images = [pygame.image.load(os.path.join('Assets\\Man',str(x)+'.png')) for x in range(1,10)]
 #load happy man animation
-happy_man_images = [pygame.image.load(os.path.join('Assets\\Animations\\HappyMan','happyman'+str(x)+'.png')) for x in range(1,8)]
+happy_man_images = [pygame.image.load(os.path.join('Assets\\Animations\\HappyMan','happyman'+str(x)+'.png')) for x in range(1,11)]
 #button images
-next_button_image = pygame.image.load(os.path.join('Assets\\Button','next_button.png'))
-again_button_image = pygame.image.load(os.path.join('Assets\\Button','again_button.png'))
+next_button_image = pygame.image.load(os.path.join('Assets\\Button\\Next','next.png'))
+next_clicked_button_image = pygame.image.load(os.path.join('Assets\\Button\\Next','next_clicked.png'))
+replay_button_image = pygame.image.load(os.path.join('Assets\\Button\\Replay','replay.png'))
+replay_clicked_button_image = pygame.image.load(os.path.join('Assets\\Button\\Replay','replay_clicked.png'))
+suggest_button_image = pygame.image.load(os.path.join('Assets\\Button\\Suggest','suggest.png'))
+suggest_clicked_button_image = pygame.image.load(os.path.join('Assets\\Button\\Suggest','suggest_clicked.png'))
+
+#text images
+suggest_times_text_image = pygame.image.load(os.path.join('Assets\\Text','times.png'))
 #coin image
 coin_image = pygame.image.load(os.path.join('Assets\\Text','Coin.png'))
 
@@ -55,13 +64,15 @@ underscore_manage = underscore_manager.Undercore_manager(15,420,390,alpha_images
 #buttons
 alpha_button = []
 #load text
-title_text = my_text.My_Text('',300,305,1,BACKGROUND_TEXT_IMAGE)   
-coin_text = my_text.My_Text('',700,25,0.2,coin_image)
+title_text = my_text.My_Text('',300,305,1, background_image= BACKGROUND_TEXT_IMAGE)   
+coin_text = my_text.My_Text('',700,25,0.2,background_image=coin_image)
 coin_count_text = my_text.My_Text('0',760,25,0.2,width = 50,height=50)
+
 #level
 can_next_level = True
 is_game_over = False
 answer = ''
+amount = 0
 right_circles = []
 x_red = []
 CURRENT_MAN = PILE
@@ -79,21 +90,32 @@ for i in range(0,DEFAULT_COIN_PER_LEVEL):
 #pop up window
 
 next_box = box_message.Box_message(BOX_MESSAGE_IMAGE,0,310,1)
-next_box.create_text('',260,25,0.3,MY_RECORD_IMAGE)
-happy_man_animation = animation.Animation(HAPPY_MANS,100,25,time_per_image=75)
-next_button = next_box.create_button(next_button_image,405,250,1,'',15)
+next_box.create_text('',260,25,0.3,background_image= MY_RECORD_IMAGE)
+happy_man_animation = animation.Animation(HAPPY_MANS,100,25,time_per_image=100)
+next_button = next_box.create_button(next_button_image,415,250,1,'',15,clicked_image=next_clicked_button_image)
 
 
 over_box = box_message.Box_message(BOX_MESSAGE_IMAGE,0,305,1)
 over_box.create_text('OOPS! YOU DIE',260,25,0.3,BOX_MESSAGE_IMAGE)
-again_button = over_box.create_button(again_button_image,405,250,0.1,'',15)
+replay_button = over_box.create_button(replay_button_image,380,150,2,'',15,clicked_image = replay_clicked_button_image)
 
-
+#suggest button and text
+suggest_button = button.Button(710,120,suggest_button_image,1,'',clicked_image=suggest_clicked_button_image)
+suggest_amount_text = my_text.My_Text('x'+str(COST_SUGGESTION),700,110,0.5,background_image=suggest_times_text_image, size_font=18)
+suggest_amount_text.set_y_offset_text(-2)
+suggest_coin_text = my_text.My_Text('',747,107,0.1,coin_image)
 #check is right character in answer
 def has_right_character_in_answer(char: str):
     global answer
     return [i for i in range(0,len(answer)) if answer[i]==char]
 
+#reset all buttons
+def set_can_click_alpha_buttons():
+    sleep(0.2) #second 
+    for button in alpha_button:
+        button.set_can_click(True)
+# create thread
+reset_thread = Thread(target = set_can_click_alpha_buttons,args=[])
 #next level game
 def next_level_game():
     global can_next_level
@@ -111,16 +133,16 @@ def next_level_game():
     wrong_answer_count = 0
     right_answer_count = 0
     underscore_manage.delete_old_underscores()
+
     playerr.add_coin(amount-count_finish_coin)
     
     coin_count_text.set_title(str(playerr.get_coin()))
-    for bt in alpha_button:
-        bt.set_can_click(True)
+    
     
     create_level()
-    for button in alpha_button:
-        button.set_can_click(True)
-    
+    #cannot fix this bug right here
+    set_can_click_alpha_buttons()
+           
 #handle game over
 def game_over():
     global CURRENT_MAN
@@ -165,7 +187,10 @@ def on_char_button_clicked(infor,posx,posy):
         CURRENT_MAN = MANS[wrong_answer_count]
         wrong_answer_count+=1
         x_red.append((posx,posy))
-
+def substract_money_of_player():
+    if playerr.get_coin()>=COST_SUGGESTION:
+        pass
+    
 def add_money_to_player():
     global count_finish_coin
     playerr.add_coin(1)
@@ -207,20 +232,22 @@ def draw_coins():
 def draw_window(): 
     WIN.fill(WHITE)  
     WIN.blit(BACKGROUND_IMAGE,(0,0))
-    if can_next_level:
+    if can_next_level or next_button.get_clicked():
         draw_pass_level()
-    elif is_game_over:
+    elif is_game_over or replay_button.get_clicked():
         draw_game_play_mechanism()
         draw_game_over()
     else: draw_game_play_mechanism()
     
+    suggest_button.draw(WIN)
+    suggest_amount_text.draw(WIN)
+    suggest_coin_text.draw(WIN)
+    
     coin_text.draw(WIN)
     coin_count_text.draw(WIN)
     if can_next_level:
-        # for i in range(0,amount):
-        #     animation_coins[i].draw_animation(WIN)
         draw_coins()
-    
+  
     pygame.display.update()
     
 def start():
@@ -243,10 +270,13 @@ def start():
     for bt in alpha_button:
         bt.subscribe(on_char_button_clicked)
     next_button.subscribe(next_level_game,False)
-    again_button.subscribe(next_level_game,False)
+    replay_button.subscribe(next_level_game,False)
     #subscribe event for coin animation
     for animation_coin in animation_coins:
         animation_coin.subcribe(add_money_to_player)
+    #thread
+    reset_thread.start()
+    
     create_level()
 def create_level():
     global can_next_level
@@ -257,8 +287,7 @@ def create_level():
     print(answer)
     can_next_level = False
     title_text.set_title(title)
-    underscore_manage.set_quantity(len(answer))
-                
+    underscore_manage.set_quantity(len(answer))               
 def update():
     pass
    
