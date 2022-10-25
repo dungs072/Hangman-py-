@@ -102,13 +102,13 @@ for i in range(0,DEFAULT_COIN_PER_LEVEL):
 next_box = box_message.Box_message(BOX_MESSAGE_IMAGE,0,310,1)
 next_box.create_text('',260,25,0.3,background_image= MY_RECORD_IMAGE)
 happy_man_animation = animation.Animation(HAPPY_MANS,100,25,time_per_image=100)
-cloud_animation1 = animation.Animation(clouds,50,25,time_per_image=100)
-cloud_animation2 = animation.Animation(clouds,600,70,time_per_image=100)
+cloud_animation1 = animation.Animation(clouds,50,25,time_per_image=500)
+cloud_animation2 = animation.Animation(clouds,600,70,time_per_image=500)
 next_button = next_box.create_button(next_button_image,415,250,1,'',15,clicked_image=next_clicked_button_image)
 chest_text = next_box.create_text('',330,90,0.5,chest_image)
 
 over_box = box_message.Box_message(BOX_MESSAGE_IMAGE,0,305,1)
-over_box.create_text('OOPS! YOU DIE',260,25,0.3,BOX_MESSAGE_IMAGE)
+over_box.create_text('OOPS... YOU FAILED!',260,25,0.3,BOX_MESSAGE_IMAGE)
 replay_button = over_box.create_button(replay_button_image,380,150,2,'',15,clicked_image = replay_clicked_button_image)
 
 #suggest button and text
