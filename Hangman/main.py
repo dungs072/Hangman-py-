@@ -46,8 +46,12 @@ man_images = [pygame.image.load(os.path.join('Assets\\Man',str(x)+'.png')) for x
 #load happy man animation
 happy_man_images = [pygame.image.load(os.path.join('Assets\\Animations\\HappyMan','happyman'+str(x)+'.png')) for x in range(1,11)]
 #load cloud animation
-cloud_images = [pygame.image.load(os.path.join('Assets\\Animations\\Clouds','cloud'+str(x)+'.png')) for x in range(1,5)]
+cloud_images = [pygame.image.load(os.path.join('Assets\\Animations\\Clouds','cloud'+str(x)+'.png')) for x in range(1,6)]
 clouds = [pygame.transform.scale(image,(200,100)) for image in cloud_images]
+#load draw circle animation
+draw_circle_images = [pygame.image.load(os.path.join('Assets\\Animations\\Draw_Circle','circle'+str(x)+'.png')) for x in range(0,6)]
+#load draw x animation
+draw_x_images = [pygame.image.load(os.path.join('Assets\\Animations\\Draw_X','x'+str(x)+'.png')) for x in range(0,6)]
 #button images
 next_button_image = pygame.image.load(os.path.join('Assets\\Button\\Next','next.png'))
 next_clicked_button_image = pygame.image.load(os.path.join('Assets\\Button\\Next','next_clicked.png'))
@@ -75,15 +79,16 @@ alpha_button = []
 title_text = my_text.My_Text('',300,305,1, background_image= BACKGROUND_TEXT_IMAGE)   
 coin_text = my_text.My_Text('',700,25,0.2,background_image=coin_image)
 coin_count_text = my_text.My_Text('0',760,25,0.2,width = 50,height=50)
-
+answer_text = my_text.My_Text('ANSWER: ',545,233,1)
+#create draw circle/x animation
+draw_circle_animations = []
+draw_x_animations = []
 #level
 can_next_level = True
 is_game_over = False
 answer = ''
 amount = 0
 score_amount = 0
-right_circles = []
-x_red = []
 current_answer =[]
 CURRENT_MAN = PILE
 wrong_answer_count = 0
@@ -99,7 +104,7 @@ for i in range(0,DEFAULT_COIN_PER_LEVEL):
     animation_coins.append(Coin_Animation_Manager(405,400,760,25,15,50))
 #pop up window
 
-next_box = box_message.Box_message(BOX_MESSAGE_IMAGE,0,310,1)
+next_box = box_message.Box_message(BOX_MESSAGE_IMAGE,0,310,1,'Assets\\Sounds\\success.mp3')
 next_box.create_text('',260,25,0.3,background_image= MY_RECORD_IMAGE)
 happy_man_animation = animation.Animation(HAPPY_MANS,100,25,time_per_image=100)
 cloud_animation1 = animation.Animation(clouds,50,25,time_per_image=500)
@@ -107,7 +112,7 @@ cloud_animation2 = animation.Animation(clouds,600,70,time_per_image=500)
 next_button = next_box.create_button(next_button_image,415,250,1,'',15,clicked_image=next_clicked_button_image)
 chest_text = next_box.create_text('',330,90,0.5,chest_image)
 
-over_box = box_message.Box_message(BOX_MESSAGE_IMAGE,0,305,1)
+over_box = box_message.Box_message(BOX_MESSAGE_IMAGE,0,305,1,'Assets\\Sounds\\game_over.mp3')
 over_box.create_text('OOPS... YOU FAILED!',260,25,0.3,BOX_MESSAGE_IMAGE)
 replay_button = over_box.create_button(replay_button_image,380,150,2,'',15,clicked_image = replay_clicked_button_image)
 
@@ -132,20 +137,21 @@ reset_thread = Thread(target = set_can_click_alpha_buttons,args=[])
 def next_level_game():
     global can_next_level
     global is_game_over
-    global right_circles
-    global x_red
+    global draw_circle_animations
+    global draw_x_animations
+    global x_red_pos
     global CURRENT_MAN
     global wrong_answer_count
     global right_answer_count
     CURRENT_MAN = PILE
     can_next_level = True
     is_game_over = False
-    right_circles = []
-    x_red = []
+    draw_circle_animations.clear()
+    draw_x_animations.clear()
     wrong_answer_count = 0
     right_answer_count = 0
     underscore_manage.delete_old_underscores()
-
+    next_box.stop_sound()
     playerr.add_coin(amount-count_finish_coin)
     
     coin_count_text.set_title(str(playerr.get_coin()))
@@ -158,7 +164,12 @@ def next_level_game():
 #handle game over
 def game_over():
     global CURRENT_MAN
+    global score_amount
     CURRENT_MAN = MANS[MAX_CHOICE+1]
+    score_amount = 0
+    score_count_text.set_title(str(score_amount))
+    over_box.play_sound()
+    answer_text.set_title('Answer: '+answer.upper())
 
 def handle_overcome_challenge():
     global start_time
@@ -177,6 +188,8 @@ def handle_overcome_challenge():
         count_animation_coin = 0
         count_finish_coin = 0
         can_next_level = True
+        next_box.play_sound()
+        answer_text.set_title('Answer: '+answer.upper())
         for button in alpha_button:
             button.set_can_click(False)
             
@@ -193,7 +206,7 @@ def on_char_button_clicked(infor,posx,posy):
     if len(right_indexes)>0:
         for i in right_indexes:
             underscore_manage.put_char_onto_underscore(infor,i)
-            right_circles.append((posx,posy))
+            draw_circle_animations.append(animation.Animation(draw_circle_images,posx,posy,50))
             right_answer_count+=1
             current_answer[i] = 1
         handle_overcome_challenge()
@@ -206,7 +219,8 @@ def on_char_button_clicked(infor,posx,posy):
             return
         CURRENT_MAN = MANS[wrong_answer_count]
         wrong_answer_count+=1
-        x_red.append((posx,posy))
+        draw_x_animations.append(animation.Animation(draw_x_images,posx,posy,50))
+    
 
 def find_suggest_index():
     for index,item in enumerate(current_answer):
@@ -227,7 +241,8 @@ def substract_money_of_player():
             current_answer[i] = 1
         temp_button = alpha_button[ord(answer[right_indexes[0]])-ord('a')]
         temp_button.set_can_click(False)
-        right_circles.append(temp_button.get_position())
+        (posx,posy) = temp_button.get_position()
+        draw_circle_animations.append(animation.Animation(draw_circle_images,posx,posy,50))
         handle_overcome_challenge()
         
 def add_money_to_player():
@@ -235,27 +250,25 @@ def add_money_to_player():
     playerr.add_coin(1)
     count_finish_coin+=1
     coin_count_text.set_title(str(playerr.get_coin()))
-def draw_X(posx,posy):
-    WIN.blit(X_IMAGE,(posx,posy))
-def draw_right_circle(posx,posy):
-    WIN.blit(RIGHT_IMAGE,(posx,posy))  
 def draw_game_play_mechanism():
     WIN.blit(CURRENT_MAN,(100,25))
     title_text.draw(WIN)
     for button in alpha_button:
         button.draw(WIN)
     underscore_manage.draw(WIN)
-    if(len(right_circles)>0):
-        for (posx,posy) in right_circles:
-            draw_right_circle(posx,posy)
-    if(len(x_red)>0):
-        for (posx,posy) in x_red:
-            draw_X(posx,posy)
+    if(len(draw_circle_animations)>0):
+        for animation in draw_circle_animations:
+            animation.draw(WIN,False)
+    if(len(draw_x_animations)>0):
+        for animation in draw_x_animations:
+            animation.draw(WIN,False)
 def draw_pass_level():
     next_box.draw(WIN)
+    answer_text.draw(WIN)
     happy_man_animation.draw(WIN)
 def draw_game_over():
     over_box.draw(WIN)   
+    answer_text.draw(WIN)
     
 def draw_coins():
     global start_time
@@ -284,7 +297,7 @@ def draw_window():
     coin_count_text.draw(WIN)
     if can_next_level:
         draw_coins()
-    else:
+    elif is_game_over==False:
         suggest_button.draw(WIN)
         suggest_amount_text.draw(WIN)
         suggest_coin_text.draw(WIN)
@@ -302,7 +315,7 @@ def start():
     vertical_offset = 0
     horizontal_offset = 0 
     for index, image in enumerate(alpha_images):
-        alpha_button.append(button.Button(100+horizontal_offset*75,450+vertical_offset,image,1,infor = chr(index+97),count_click=1))
+        alpha_button.append(button.Button(100+horizontal_offset*75,450+vertical_offset,image,1,infor = chr(index+97),count_click=1,song_path = 'Assets\\Sounds\\write_paper.mp3'))
         horizontal_offset+=1
         if(index==9 or index==19): 
             vertical_offset +=60

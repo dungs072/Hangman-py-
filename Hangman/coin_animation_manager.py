@@ -1,4 +1,5 @@
 import pygame
+from pygame import mixer
 import os
 class Coin_Animation_Manager():
     def __init__(self,startX,startY,desX,desY,xSpeed,time_per_image) -> None:
@@ -21,6 +22,8 @@ class Coin_Animation_Manager():
             if self.is_in_des==False:
                 self.event_trigger()
                 self.is_in_des = True
+                mixer.Channel(2).play(mixer.Sound('Assets\\Sounds\\coin_receive.mp3'))
+            
             return
         if pygame.time.get_ticks()-self.start_time<self.time_per_image:
             WIN.blit(self.current_image,(self.current_x_point,self.current_y_point))

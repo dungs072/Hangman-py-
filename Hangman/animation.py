@@ -10,11 +10,18 @@ class Animation():
         self.time_per_image = time_per_image
     
         
-    def draw(self,WIN):
+    def draw(self,WIN,can_loop = True):
         if pygame.time.get_ticks()-self.start_time<self.time_per_image:
             WIN.blit(self.images[self.count],(self.x,self.y)) 
         else:
             self.start_time = pygame.time.get_ticks()
-            self.count = (self.count+1)%len(self.images)
+            if can_loop:
+                self.count = (self.count+1)%len(self.images)
+            else:
+                self.count = min(self.count+1,len(self.images)-1)
             WIN.blit(self.images[self.count],(self.x,self.y)) 
+            
+    def set_position(self,x,y):
+        self.x = x
+        self.y = y
         

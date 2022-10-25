@@ -1,8 +1,8 @@
 import pygame
-
+from pygame import mixer
 pygame.font.init()
 class Button():
-    def __init__(self, x,y,image,scale,title = '',size_text = 30,infor = None,count_click = -1,clicked_image = None) -> None:
+    def __init__(self, x,y,image,scale,title = '',size_text = 30,infor = None,count_click = -1,clicked_image = None,song_path = None) -> None:
         width = image.get_width()
         height = image.get_height()
         self.image = pygame.transform.scale(image,(int(width*scale),int(height*scale)))
@@ -24,6 +24,10 @@ class Button():
         self.time_since_unclicked2 = 0
         self.time_per_unclicked2 = 700
         self.current_image = self.image if clicked_image ==None else clicked_image
+        self.song_path = song_path
+        if song_path!=None:
+            mixer.init()
+            mixer.music.load(song_path)
     def draw(self,WIN):
         #get mouse position
         pos = pygame.mouse.get_pos()
@@ -37,6 +41,9 @@ class Button():
                 if self.clicked ==False:
                     self.clicked = True
                     if self.event_trigger!=None and self.can_click==True: 
+                        if self.song_path!=None:
+                            self.play_sound()
+                            
                         if self.need_argu:
                             self.event_trigger(self.infor, self.rect.x,self.rect.y)
                         else:
@@ -70,3 +77,7 @@ class Button():
         return self.clicked
     def get_position(self):
         return (self.rect.x,self.rect.y)
+    def play_sound(self):
+        mixer.music.play()
+    def stop_sound(self):
+        mixer.music.stop()
