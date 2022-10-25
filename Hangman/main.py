@@ -1,4 +1,5 @@
 
+from pickle import FALSE
 import pygame
 import os
 from threading import Thread
@@ -25,6 +26,7 @@ MAX_CHOICE = 7
 COST_SUGGESTION = 30
 
 DEFAULT_COIN_PER_LEVEL = 10
+DEFAULT_SCORE_PER_LEVEL = 100
 
 BACKGROUND_IMAGE = pygame.image.load(os.path.join('Assets\\Hangman','Background.jpg'))
 PILE_IMAGE = pygame.image.load(os.path.join('Assets\\Hangman','Pile.png'))
@@ -43,6 +45,9 @@ alpha_images = [pygame.image.load(os.path.join('Assets\\Alphas',chr(x)+'.png')) 
 man_images = [pygame.image.load(os.path.join('Assets\\Man',str(x)+'.png')) for x in range(1,10)]
 #load happy man animation
 happy_man_images = [pygame.image.load(os.path.join('Assets\\Animations\\HappyMan','happyman'+str(x)+'.png')) for x in range(1,11)]
+#load cloud animation
+cloud_images = [pygame.image.load(os.path.join('Assets\\Animations\\Clouds','cloud'+str(x)+'.png')) for x in range(1,5)]
+clouds = [pygame.transform.scale(image,(200,100)) for image in cloud_images]
 #button images
 next_button_image = pygame.image.load(os.path.join('Assets\\Button\\Next','next.png'))
 next_clicked_button_image = pygame.image.load(os.path.join('Assets\\Button\\Next','next_clicked.png'))
@@ -50,12 +55,15 @@ replay_button_image = pygame.image.load(os.path.join('Assets\\Button\\Replay','r
 replay_clicked_button_image = pygame.image.load(os.path.join('Assets\\Button\\Replay','replay_clicked.png'))
 suggest_button_image = pygame.image.load(os.path.join('Assets\\Button\\Suggest','suggest.png'))
 suggest_clicked_button_image = pygame.image.load(os.path.join('Assets\\Button\\Suggest','suggest_clicked.png'))
-
+#chest image
+chest_image = pygame.image.load(os.path.join('Assets\\Items','Chest.png'))
 #text images
 suggest_times_text_image = pygame.image.load(os.path.join('Assets\\Text','times.png'))
 #coin image
 coin_image = pygame.image.load(os.path.join('Assets\\Text','Coin.png'))
-
+# text score
+score_text = my_text.My_Text('Score: ',50,21,1,size_font=20)
+score_count_text = my_text.My_Text('1000',125,21,1,size_font=20)
 MANS = [pygame.transform.scale(image,(600,300)) for image in man_images]
 HAPPY_MANS = [pygame.transform.scale(image,(600,300)) for image in happy_man_images]
 #load backend
@@ -73,8 +81,10 @@ can_next_level = True
 is_game_over = False
 answer = ''
 amount = 0
+score_amount = 0
 right_circles = []
 x_red = []
+current_answer =[]
 CURRENT_MAN = PILE
 wrong_answer_count = 0
 right_answer_count = 0
@@ -92,8 +102,10 @@ for i in range(0,DEFAULT_COIN_PER_LEVEL):
 next_box = box_message.Box_message(BOX_MESSAGE_IMAGE,0,310,1)
 next_box.create_text('',260,25,0.3,background_image= MY_RECORD_IMAGE)
 happy_man_animation = animation.Animation(HAPPY_MANS,100,25,time_per_image=100)
+cloud_animation1 = animation.Animation(clouds,50,25,time_per_image=100)
+cloud_animation2 = animation.Animation(clouds,600,70,time_per_image=100)
 next_button = next_box.create_button(next_button_image,415,250,1,'',15,clicked_image=next_clicked_button_image)
-
+chest_text = next_box.create_text('',330,90,0.5,chest_image)
 
 over_box = box_message.Box_message(BOX_MESSAGE_IMAGE,0,305,1)
 over_box.create_text('OOPS! YOU DIE',260,25,0.3,BOX_MESSAGE_IMAGE)
@@ -147,18 +159,35 @@ def next_level_game():
 def game_over():
     global CURRENT_MAN
     CURRENT_MAN = MANS[MAX_CHOICE+1]
+
+def handle_overcome_challenge():
+    global start_time
+    global count_animation_coin
+    global count_finish_coin
+    global can_next_level
+    global amount
+    global score_amount
+    if right_answer_count == len(answer):
+        amount = DEFAULT_COIN_PER_LEVEL-wrong_answer_count
+        score_amount= score_amount+DEFAULT_SCORE_PER_LEVEL - wrong_answer_count*10
+        score_count_text.set_title(str(score_amount))
+        for i in range(0,amount):
+            animation_coins[i].reset()
+        start_time = pygame.time.get_ticks()
+        count_animation_coin = 0
+        count_finish_coin = 0
+        can_next_level = True
+        for button in alpha_button:
+            button.set_can_click(False)
+            
 #subscribe event
 def on_char_button_clicked(infor,posx,posy):
     global wrong_answer_count
     global CURRENT_MAN
     global right_answer_count
-    global can_next_level
     global is_game_over
     global animation_coins
-    global amount
-    global start_time
-    global count_animation_coin
-    global count_finish_coin
+    global current_answer
     right_indexes = has_right_character_in_answer(infor)
     
     if len(right_indexes)>0:
@@ -166,17 +195,8 @@ def on_char_button_clicked(infor,posx,posy):
             underscore_manage.put_char_onto_underscore(infor,i)
             right_circles.append((posx,posy))
             right_answer_count+=1
-        if right_answer_count == len(answer):
-            #next_level_game()
-            amount = DEFAULT_COIN_PER_LEVEL-wrong_answer_count
-            for i in range(0,amount):
-                animation_coins[i].reset()
-            start_time = pygame.time.get_ticks()
-            count_animation_coin = 0
-            count_finish_coin = 0
-            can_next_level = True
-            for button in alpha_button:
-                button.set_can_click(False)
+            current_answer[i] = 1
+        handle_overcome_challenge()
     else:
         if(wrong_answer_count>=MAX_CHOICE):
             game_over()
@@ -187,10 +207,29 @@ def on_char_button_clicked(infor,posx,posy):
         CURRENT_MAN = MANS[wrong_answer_count]
         wrong_answer_count+=1
         x_red.append((posx,posy))
+
+def find_suggest_index():
+    for index,item in enumerate(current_answer):
+        if item==0:
+            return index 
+    return -1
 def substract_money_of_player():
+    global right_answer_count
+    global current_answer
     if playerr.get_coin()>=COST_SUGGESTION:
-        pass
-    
+        playerr.add_coin(-1*COST_SUGGESTION)
+        coin_count_text.set_title(str(playerr.get_coin()))
+        suggest_index = find_suggest_index()
+        right_indexes = has_right_character_in_answer(answer[suggest_index])
+        for i in right_indexes:
+            underscore_manage.put_char_onto_underscore(answer[i],i)
+            right_answer_count+=1
+            current_answer[i] = 1
+        temp_button = alpha_button[ord(answer[right_indexes[0]])-ord('a')]
+        temp_button.set_can_click(False)
+        right_circles.append(temp_button.get_position())
+        handle_overcome_challenge()
+        
 def add_money_to_player():
     global count_finish_coin
     playerr.add_coin(1)
@@ -228,10 +267,10 @@ def draw_coins():
         count_animation_coin = min(count_animation_coin+1,amount)
     for i in range(0,count_animation_coin):
         animation_coins[i].draw_animation(WIN)
-        
 def draw_window(): 
     WIN.fill(WHITE)  
     WIN.blit(BACKGROUND_IMAGE,(0,0))
+    cloud_animation2.draw(WIN)
     if can_next_level or next_button.get_clicked():
         draw_pass_level()
     elif is_game_over or replay_button.get_clicked():
@@ -239,21 +278,26 @@ def draw_window():
         draw_game_over()
     else: draw_game_play_mechanism()
     
-    suggest_button.draw(WIN)
-    suggest_amount_text.draw(WIN)
-    suggest_coin_text.draw(WIN)
-    
+    score_text.draw(WIN)
+    score_count_text.draw(WIN)
     coin_text.draw(WIN)
     coin_count_text.draw(WIN)
     if can_next_level:
         draw_coins()
-  
+    else:
+        suggest_button.draw(WIN)
+        suggest_amount_text.draw(WIN)
+        suggest_coin_text.draw(WIN)
+    cloud_animation1.draw(WIN)
+    
     pygame.display.update()
     
 def start():
     #player
     global playerr
-    playerr = Player(0)
+    playerr = Player(100)
+    coin_count_text.set_title(str(playerr.get_coin()))
+    score_count_text.set_title(str(score_amount))
     #load button     
     vertical_offset = 0
     horizontal_offset = 0 
@@ -271,6 +315,7 @@ def start():
         bt.subscribe(on_char_button_clicked)
     next_button.subscribe(next_level_game,False)
     replay_button.subscribe(next_level_game,False)
+    suggest_button.subscribe(substract_money_of_player,False)
     #subscribe event for coin animation
     for animation_coin in animation_coins:
         animation_coin.subcribe(add_money_to_player)
@@ -281,9 +326,11 @@ def start():
 def create_level():
     global can_next_level
     global answer
+    global current_answer
     if(can_next_level == False): return
     (title,answer) = quizz_manage.get_quizz()
     if(title==None and answer==None): return
+    current_answer = [ 0 for i in range(0,len(answer))]
     print(answer)
     can_next_level = False
     title_text.set_title(title)

@@ -68,3 +68,5 @@ class Button():
         self.can_click = can_click
     def get_clicked(self):
         return self.clicked
+    def get_position(self):
+        return (self.rect.x,self.rect.y)
