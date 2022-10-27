@@ -1,17 +1,18 @@
 
-from pickle import FALSE
 import pygame
 import os
 from threading import Thread
 from time import sleep
 import button
 from coin_animation_manager import Coin_Animation_Manager
+from UI.menu_game import Menu
 import my_text
 from player import Player
 import quizz_manager
 import underscore_manager
 import box_message
 import animation
+
 
 WIDTH, HEIGHT = 900,650
 WIN = pygame.display.set_mode((WIDTH,HEIGHT))
@@ -36,6 +37,11 @@ X_IMAGE = pygame.image.load(os.path.join('Assets\\Text','xSign.png'))
 PILE = pygame.transform.scale(PILE_IMAGE,(600,300))
 BACKGROUND_TEXT = pygame.transform.scale(BACKGROUND_TEXT_IMAGE,(200,50))
 
+#UI
+MENU_IMAGE = pygame.image.load(os.path.join('Assets\\UI','Background_menu.png'))
+BACKGROUND_BUTTON = pygame.image.load(os.path.join('Assets\\UI','Background_button.png'))
+BACKGROUND_EXIT_BUTTON = pygame.image.load(os.path.join('Assets\\UI','Background_exit.png'))
+HANGMAN_TITLE_IMAGE = pygame.image.load(os.path.join('Assets\\UI','Hangman_title.png'))
 #box message
 BOX_MESSAGE_IMAGE = pygame.image.load(os.path.join('Assets\\Text','Pop_up.png'))
 MY_RECORD_IMAGE = pygame.image.load(os.path.join('Assets\\Text','MyRecord.png'))
@@ -115,7 +121,6 @@ chest_text = next_box.create_text('',330,90,0.5,chest_image)
 over_box = box_message.Box_message(BOX_MESSAGE_IMAGE,0,305,1,'Assets\\Sounds\\game_over.mp3')
 over_box.create_text('OOPS... YOU FAILED!',260,25,0.3,BOX_MESSAGE_IMAGE)
 replay_button = over_box.create_button(replay_button_image,380,150,2,'',15,clicked_image = replay_clicked_button_image)
-
 #suggest button and text
 suggest_button = button.Button(710,120,suggest_button_image,1,'',clicked_image=suggest_clicked_button_image)
 suggest_amount_text = my_text.My_Text('x'+str(COST_SUGGESTION),700,110,0.5,background_image=suggest_times_text_image, size_font=18)
@@ -242,6 +247,7 @@ def substract_money_of_player():
         temp_button = alpha_button[ord(answer[right_indexes[0]])-ord('a')]
         temp_button.set_can_click(False)
         (posx,posy) = temp_button.get_position()
+        temp_button.play_sound()
         draw_circle_animations.append(animation.Animation(draw_circle_images,posx,posy,50))
         handle_overcome_challenge()
         
@@ -280,9 +286,8 @@ def draw_coins():
         count_animation_coin = min(count_animation_coin+1,amount)
     for i in range(0,count_animation_coin):
         animation_coins[i].draw_animation(WIN)
-def draw_window(): 
-    WIN.fill(WHITE)  
-    WIN.blit(BACKGROUND_IMAGE,(0,0))
+def draw_game_play():
+    
     cloud_animation2.draw(WIN)
     if can_next_level or next_button.get_clicked():
         draw_pass_level()
@@ -302,12 +307,24 @@ def draw_window():
         suggest_amount_text.draw(WIN)
         suggest_coin_text.draw(WIN)
     cloud_animation1.draw(WIN)
-    
+def draw_menu_UI():
+    main_menu.draw(WIN)
+def draw_window(): 
+    WIN.fill(WHITE)  
+    WIN.blit(BACKGROUND_IMAGE,(0,0))
+    #draw_game_play()
+    draw_menu_UI()
     pygame.display.update()
     
 def start():
     #player
     global playerr
+    global main_menu
+    main_menu = Menu(270,80,0.8,MENU_IMAGE)
+    main_menu.create_button(BACKGROUND_BUTTON,53,100,0.8,'PLAY GAME',30)
+    main_menu.create_button(BACKGROUND_BUTTON,53,250,0.8,'HIGH SCORES',30)
+    main_menu.create_button(BACKGROUND_EXIT_BUTTON,53,400,0.8,'EXIT',30)
+    main_menu.create_text('',-150,-75,1,HANGMAN_TITLE_IMAGE)
     playerr = Player(100)
     coin_count_text.set_title(str(playerr.get_coin()))
     score_count_text.set_title(str(score_amount))
@@ -348,9 +365,6 @@ def create_level():
     can_next_level = False
     title_text.set_title(title)
     underscore_manage.set_quantity(len(answer))               
-def update():
-    pass
-   
 #game loop
 def main():
     clock = pygame.time.Clock()
@@ -361,7 +375,6 @@ def main():
         for event in pygame.event.get(): #catch events
             if event.type ==pygame.QUIT:
                 run = False
-        update()
         
         draw_window() 
                 
