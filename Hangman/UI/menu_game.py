@@ -17,10 +17,10 @@ class Menu():
         x = x+self.rect.x
         y = y+self.rect.y
         self.texts.append(My_Text(title,x,y,scale,background_image= background_image))
-    def create_button(self,image,x,y,scale,title = '',size_text = 30,clicked_image = None):
+    def create_button(self,image,x,y,scale,title = '',size_text = 30,clicked_image = None,wait_time_trigger_event = 0,sound_path = '',chanel =1):
         x = x+self.rect.x
         y = y+self.rect.y
-        self.buttons.append(Button(x,y,image,scale,title,size_text,clicked_image=clicked_image))
+        self.buttons.append(Button(x,y,image,scale,title,size_text,clicked_image=clicked_image,wait_time_trigger_event=wait_time_trigger_event,song_path = sound_path,chanel=chanel))
         return self.buttons[-1]
     
     def draw(self,WIN):

@@ -1,4 +1,3 @@
-
 import pygame
 import os
 from threading import Thread
@@ -12,6 +11,7 @@ import quizz_manager
 import underscore_manager
 import box_message
 import animation
+import sound_manager
 
 
 WIDTH, HEIGHT = 900,650
@@ -28,6 +28,8 @@ COST_SUGGESTION = 30
 
 DEFAULT_COIN_PER_LEVEL = 10
 DEFAULT_SCORE_PER_LEVEL = 100
+#SOUND
+CLICKED_SOUND_PATH = 'Assets\\Sounds\\sound_clicked_button.mp3'
 
 BACKGROUND_IMAGE = pygame.image.load(os.path.join('Assets\\Hangman','Background.jpg'))
 PILE_IMAGE = pygame.image.load(os.path.join('Assets\\Hangman','Pile.png'))
@@ -39,9 +41,13 @@ BACKGROUND_TEXT = pygame.transform.scale(BACKGROUND_TEXT_IMAGE,(200,50))
 
 #UI
 MENU_IMAGE = pygame.image.load(os.path.join('Assets\\UI','Background_menu.png'))
-BACKGROUND_BUTTON = pygame.image.load(os.path.join('Assets\\UI','Background_button.png'))
-BACKGROUND_EXIT_BUTTON = pygame.image.load(os.path.join('Assets\\UI','Background_exit.png'))
-HANGMAN_TITLE_IMAGE = pygame.image.load(os.path.join('Assets\\UI','Hangman_title.png'))
+BACKGROUND_BUTTON_CLICKED = pygame.image.load(os.path.join('Assets\\UI','Background_button_clicked.png'))
+BACKGROUND_EXIT_BUTTON_CLICKED = pygame.image.load(os.path.join('Assets\\UI','Background_button_exit_clicked.png'))
+BACKGROUND_BUTTON_UNCLICKED =pygame.image.load(os.path.join('Assets\\UI','Background_button_unclicked.png'))
+BACKGROUND_EXIT_BUTTON_UNCLICKED = pygame.image.load(os.path.join('Assets\\UI','Background_exit_unclicked.png'))
+HANGMAN_TITLE_IMAGES = [pygame.image.load(os.path.join('Assets\\UI\\Hangman_Title','Hangman_title'+str(x)+'.png')) for x in range(0,4)]
+PILE_UI_IMAGES = [pygame.image.load(os.path.join('Assets\\Animations\\Intro','intro'+str(x)+'.png')) for x in range(1,6)]
+PILE_UI_IMAGES_BIG = [pygame.transform.scale(image,(500,400)) for image in PILE_UI_IMAGES]
 #box message
 BOX_MESSAGE_IMAGE = pygame.image.load(os.path.join('Assets\\Text','Pop_up.png'))
 MY_RECORD_IMAGE = pygame.image.load(os.path.join('Assets\\Text','MyRecord.png'))
@@ -115,12 +121,12 @@ next_box.create_text('',260,25,0.3,background_image= MY_RECORD_IMAGE)
 happy_man_animation = animation.Animation(HAPPY_MANS,100,25,time_per_image=100)
 cloud_animation1 = animation.Animation(clouds,50,25,time_per_image=500)
 cloud_animation2 = animation.Animation(clouds,600,70,time_per_image=500)
-next_button = next_box.create_button(next_button_image,415,250,1,'',15,clicked_image=next_clicked_button_image)
+next_button = next_box.create_button(next_button_image,415,250,1,'',15,clicked_image=next_clicked_button_image,sound_path=CLICKED_SOUND_PATH,channel=2)
 chest_text = next_box.create_text('',330,90,0.5,chest_image)
 
 over_box = box_message.Box_message(BOX_MESSAGE_IMAGE,0,305,1,'Assets\\Sounds\\game_over.mp3')
 over_box.create_text('OOPS... YOU FAILED!',260,25,0.3,BOX_MESSAGE_IMAGE)
-replay_button = over_box.create_button(replay_button_image,380,150,2,'',15,clicked_image = replay_clicked_button_image)
+replay_button = over_box.create_button(replay_button_image,380,150,2,'',15,clicked_image = replay_clicked_button_image,sound_path=CLICKED_SOUND_PATH,channel=2)
 #suggest button and text
 suggest_button = button.Button(710,120,suggest_button_image,1,'',clicked_image=suggest_clicked_button_image)
 suggest_amount_text = my_text.My_Text('x'+str(COST_SUGGESTION),700,110,0.5,background_image=suggest_times_text_image, size_font=18)
@@ -130,7 +136,8 @@ suggest_coin_text = my_text.My_Text('',747,107,0.1,coin_image)
 def has_right_character_in_answer(char: str):
     global answer
     return [i for i in range(0,len(answer)) if answer[i]==char]
-
+#START MENY
+is_start_game = False
 #reset all buttons
 def set_can_click_alpha_buttons():
     sleep(0.2) #second 
@@ -309,25 +316,45 @@ def draw_game_play():
     cloud_animation1.draw(WIN)
 def draw_menu_UI():
     main_menu.draw(WIN)
+    title_ui.draw(WIN)
+    pile_ui.draw(WIN,True)
 def draw_window(): 
     WIN.fill(WHITE)  
     WIN.blit(BACKGROUND_IMAGE,(0,0))
-    #draw_game_play()
-    draw_menu_UI()
+    if is_start_game:
+        draw_game_play()
+    else:
+        draw_menu_UI()
     pygame.display.update()
-    
+def turn_start_game_on():
+    global is_start_game
+    is_start_game = True
+def exit_game():
+    pygame.quit()
+def start_menu():
+    global main_menu
+    global pile_ui
+    global title_ui
+    global play_button
+    main_menu = Menu(50,80,0.8,MENU_IMAGE)
+    play_button = main_menu.create_button(BACKGROUND_BUTTON_UNCLICKED,30,100,0.8,'PLAY GAME',30,BACKGROUND_BUTTON_CLICKED,500,CLICKED_SOUND_PATH,chanel=2)
+    high_score_button = main_menu.create_button(BACKGROUND_BUTTON_UNCLICKED,30,250,0.8,'HIGH SCORES',30,BACKGROUND_BUTTON_CLICKED,500,CLICKED_SOUND_PATH,chanel=2)
+    exit_button = main_menu.create_button(BACKGROUND_EXIT_BUTTON_UNCLICKED,30,400,0.8,'EXIT',30,BACKGROUND_EXIT_BUTTON_CLICKED,500,CLICKED_SOUND_PATH,chanel=2)
+    title_ui = animation.Animation(HANGMAN_TITLE_IMAGES,170,-10,500)
+    pile_ui = animation.Animation(PILE_UI_IMAGES_BIG,500,150,100)
+    play_button.subscribe(turn_start_game_on,False)
+    exit_button.subscribe(exit_game,False)
+      
 def start():
     #player
     global playerr
-    global main_menu
-    main_menu = Menu(270,80,0.8,MENU_IMAGE)
-    main_menu.create_button(BACKGROUND_BUTTON,53,100,0.8,'PLAY GAME',30)
-    main_menu.create_button(BACKGROUND_BUTTON,53,250,0.8,'HIGH SCORES',30)
-    main_menu.create_button(BACKGROUND_EXIT_BUTTON,53,400,0.8,'EXIT',30)
-    main_menu.create_text('',-150,-75,1,HANGMAN_TITLE_IMAGE)
+    global intro_sound
+    start_menu()
     playerr = Player(100)
     coin_count_text.set_title(str(playerr.get_coin()))
     score_count_text.set_title(str(score_amount))
+    intro_sound = sound_manager.Sound_manager('Assets\\Sounds\\menu_intro.mp3',3,0.7)
+    intro_sound.play_sound()
     #load button     
     vertical_offset = 0
     horizontal_offset = 0 

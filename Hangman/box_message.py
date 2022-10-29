@@ -28,10 +28,10 @@ class Box_message():
             for text in self.texts:
                 text.draw(WIN)
         
-    def create_button(self,image,x,y,scale,title = '',size_text = 30,clicked_image = None):
+    def create_button(self,image,x,y,scale,title = '',size_text = 30,clicked_image = None,sound_path = '',channel = 1):
         x = x+self.rect.x
         y = y+self.rect.y
-        self.buttons.append(Button(x,y,image,scale,title,size_text,clicked_image=clicked_image))
+        self.buttons.append(Button(x,y,image,scale,title,size_text,clicked_image=clicked_image,song_path=sound_path,chanel=channel))
         return self.buttons[-1]
     def create_text(self,title,x,y,scale,background_image,image_text=None):
         x = x+self.rect.x
