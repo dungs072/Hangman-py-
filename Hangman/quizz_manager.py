@@ -34,5 +34,5 @@ class Quizz_manager:
     
     def clear_all_answers(self):
         for value in self.used_title:
-            value.clear_selected_answers()
+            self.dict_word[value].clear_selected_answers()
         self.used_title.clear()

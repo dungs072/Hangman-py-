@@ -34,7 +34,8 @@ class Button():
     def draw(self,WIN):
         if self.clicked and self.wait_time_trigger_event>0:
             if pygame.time.get_ticks()-self.time_since_last_trigger_event>=self.wait_time_trigger_event:
-                self.Trigger_event()
+                if self.clicked:
+                    self.Trigger_event()
         #get mouse position
         pos = pygame.mouse.get_pos()
         #check mouseover and clicked conditions

@@ -41,6 +41,12 @@ BACKGROUND_TEXT = pygame.transform.scale(BACKGROUND_TEXT_IMAGE,(200,50))
 
 #UI
 MENU_IMAGE = pygame.image.load(os.path.join('Assets\\UI','Background_menu.png'))
+PAUSE_IMAGE = pygame.image.load(os.path.join('Assets\\UI','Pause_Menu.png'))
+PAUSE_BUTTON_CLICKED = pygame.image.load(os.path.join('Assets\\UI','pause_button_clicked.png'))
+PAUSE_BUTTON_UNCLICKED = pygame.image.load(os.path.join('Assets\\UI','pause_button_unclicked.png'))
+#resize pause_button
+PAUSE_CLICKED = pygame.transform.scale(PAUSE_BUTTON_CLICKED,(75,75))
+PAUSE_UNCLICKED = pygame.transform.scale(PAUSE_BUTTON_UNCLICKED,(75,75))
 BACKGROUND_BUTTON_CLICKED = pygame.image.load(os.path.join('Assets\\UI','Background_button_clicked.png'))
 BACKGROUND_EXIT_BUTTON_CLICKED = pygame.image.load(os.path.join('Assets\\UI','Background_button_exit_clicked.png'))
 BACKGROUND_BUTTON_UNCLICKED =pygame.image.load(os.path.join('Assets\\UI','Background_button_unclicked.png'))
@@ -95,6 +101,9 @@ answer_text = my_text.My_Text('ANSWER: ',545,233,1)
 #create draw circle/x animation
 draw_circle_animations = []
 draw_x_animations = []
+# urgent bug :((
+is_go_into_menu = False
+time_since_last_out_menu = 0
 #level
 can_next_level = True
 is_game_over = False
@@ -114,6 +123,8 @@ count_animation_coin = 0
 count_finish_coin = 0
 for i in range(0,DEFAULT_COIN_PER_LEVEL):
     animation_coins.append(Coin_Animation_Manager(405,400,760,25,15,50))
+# pause
+is_pause = False
 #pop up window
 
 next_box = box_message.Box_message(BOX_MESSAGE_IMAGE,0,310,1,'Assets\\Sounds\\success.mp3')
@@ -128,7 +139,7 @@ over_box = box_message.Box_message(BOX_MESSAGE_IMAGE,0,305,1,'Assets\\Sounds\\ga
 over_box.create_text('OOPS... YOU FAILED!',260,25,0.3,BOX_MESSAGE_IMAGE)
 replay_button = over_box.create_button(replay_button_image,380,150,2,'',15,clicked_image = replay_clicked_button_image,sound_path=CLICKED_SOUND_PATH,channel=2)
 #suggest button and text
-suggest_button = button.Button(710,120,suggest_button_image,1,'',clicked_image=suggest_clicked_button_image)
+suggest_button = button.Button(710,120,suggest_button_image,1,'',clicked_image=suggest_clicked_button_image,song_path=CLICKED_SOUND_PATH,chanel=2)
 suggest_amount_text = my_text.My_Text('x'+str(COST_SUGGESTION),700,110,0.5,background_image=suggest_times_text_image, size_font=18)
 suggest_amount_text.set_y_offset_text(-2)
 suggest_coin_text = my_text.My_Text('',747,107,0.1,coin_image)
@@ -151,13 +162,14 @@ def next_level_game():
     global is_game_over
     global draw_circle_animations
     global draw_x_animations
-    global x_red_pos
     global CURRENT_MAN
     global wrong_answer_count
     global right_answer_count
+    global is_pause
     CURRENT_MAN = PILE
     can_next_level = True
     is_game_over = False
+    is_pause = False
     draw_circle_animations.clear()
     draw_x_animations.clear()
     wrong_answer_count = 0
@@ -301,7 +313,8 @@ def draw_game_play():
     elif is_game_over or replay_button.get_clicked():
         draw_game_play_mechanism()
         draw_game_over()
-    else: draw_game_play_mechanism()
+    elif not is_pause:
+        draw_game_play_mechanism()
     
     score_text.draw(WIN)
     score_count_text.draw(WIN)
@@ -309,16 +322,21 @@ def draw_game_play():
     coin_count_text.draw(WIN)
     if can_next_level:
         draw_coins()
-    elif is_game_over==False:
+    elif is_game_over==False and not is_pause:
         suggest_button.draw(WIN)
         suggest_amount_text.draw(WIN)
         suggest_coin_text.draw(WIN)
     cloud_animation1.draw(WIN)
+    pause_button.draw(WIN)
+    
+    if is_pause:
+        pause_menu_ui.draw(WIN)
 def draw_menu_UI():
     main_menu.draw(WIN)
     title_ui.draw(WIN)
     pile_ui.draw(WIN,True)
 def draw_window(): 
+    stupid_bug()#huhu
     WIN.fill(WHITE)  
     WIN.blit(BACKGROUND_IMAGE,(0,0))
     if is_start_game:
@@ -326,35 +344,86 @@ def draw_window():
     else:
         draw_menu_UI()
     pygame.display.update()
+def stupid_bug(): #i dont understand why this bug behave like that
+    global is_go_into_menu 
+    if not is_go_into_menu: return
+    if pygame.time.get_ticks()-time_since_last_out_menu>=500:
+        is_go_into_menu = False
 def turn_start_game_on():
+    
+    if is_go_into_menu: return
     global is_start_game
+    global is_pause
     is_start_game = True
+    is_pause = False
+    intro_sound.stop_sound()
+    gameplay_sound.play_sound()
+    quizz_manage.clear_all_answers()
+def turn_start_game_off():
+    global is_start_game
+    global is_pause
+    global is_go_into_menu
+    global time_since_last_out_menu
+    is_start_game = False
+    is_pause = False
+    is_go_into_menu = True
+    time_since_last_out_menu = pygame.time.get_ticks()
+    gameplay_sound.stop_sound()
+    intro_sound.play_sound()
 def exit_game():
-    pygame.quit()
+    global run
+    run = False
+def pause_game():
+    global is_pause
+    is_pause = True
+def unpause_game():
+    global is_pause
+    is_pause = False
+def replay_game():
+    quizz_manage.clear_all_answers()
+    playerr.coin = 100
+    score_count_text.set_title('0')
+    next_level_game()
 def start_menu():
     global main_menu
     global pile_ui
     global title_ui
-    global play_button
+    global pause_button
     main_menu = Menu(50,80,0.8,MENU_IMAGE)
     play_button = main_menu.create_button(BACKGROUND_BUTTON_UNCLICKED,30,100,0.8,'PLAY GAME',30,BACKGROUND_BUTTON_CLICKED,500,CLICKED_SOUND_PATH,chanel=2)
     high_score_button = main_menu.create_button(BACKGROUND_BUTTON_UNCLICKED,30,250,0.8,'HIGH SCORES',30,BACKGROUND_BUTTON_CLICKED,500,CLICKED_SOUND_PATH,chanel=2)
     exit_button = main_menu.create_button(BACKGROUND_EXIT_BUTTON_UNCLICKED,30,400,0.8,'EXIT',30,BACKGROUND_EXIT_BUTTON_CLICKED,500,CLICKED_SOUND_PATH,chanel=2)
     title_ui = animation.Animation(HANGMAN_TITLE_IMAGES,170,-10,500)
     pile_ui = animation.Animation(PILE_UI_IMAGES_BIG,500,150,100)
+    pause_button = button.Button(5,100,PAUSE_UNCLICKED,1,'',clicked_image=PAUSE_CLICKED,song_path=CLICKED_SOUND_PATH,wait_time_trigger_event=500,chanel=2)
     play_button.subscribe(turn_start_game_on,False)
     exit_button.subscribe(exit_game,False)
-      
+    pause_button.subscribe(pause_game,False)
+def pause_menu():
+    global pause_menu_ui 
+    pause_menu_ui = Menu(235,125,0.6,PAUSE_IMAGE,1.5)  
+    pause_menu_ui.create_text('PAUSE',190,25,1,None)
+    resume_button = pause_menu_ui.create_button(BACKGROUND_BUTTON_UNCLICKED,65,60,0.7,'RESUME',30,BACKGROUND_BUTTON_CLICKED,500,CLICKED_SOUND_PATH,chanel = 2)    
+    play_again_button = pause_menu_ui.create_button(BACKGROUND_BUTTON_UNCLICKED,65,160,0.7,'REPLAY',30,BACKGROUND_BUTTON_CLICKED,500,CLICKED_SOUND_PATH,chanel = 2)
+    exit_menu_button = pause_menu_ui.create_button(BACKGROUND_EXIT_BUTTON_UNCLICKED,65,260,0.7,'EXIT MENU',30,BACKGROUND_EXIT_BUTTON_CLICKED,500,CLICKED_SOUND_PATH,chanel=2)
+    
+    resume_button.subscribe(unpause_game,False)
+    play_again_button.subscribe(replay_game,False)
+    exit_menu_button.subscribe(turn_start_game_off,False)
+
 def start():
     #player
     global playerr
     global intro_sound
+    global gameplay_sound
     start_menu()
+    pause_menu()
     playerr = Player(100)
     coin_count_text.set_title(str(playerr.get_coin()))
     score_count_text.set_title(str(score_amount))
-    intro_sound = sound_manager.Sound_manager('Assets\\Sounds\\menu_intro.mp3',3,0.7)
+    intro_sound = sound_manager.Sound_manager('Assets\\Sounds\\menu_intro.mp3',3,0.7,1)
     intro_sound.play_sound()
+    gameplay_sound = sound_manager.Sound_manager('Assets\\Sounds\\gameplay_sound.mp3',4,0.4,2)
     #load button     
     vertical_offset = 0
     horizontal_offset = 0 
@@ -394,6 +463,7 @@ def create_level():
     underscore_manage.set_quantity(len(answer))               
 #game loop
 def main():
+    global run
     clock = pygame.time.Clock()
     run = True
     start()
@@ -402,6 +472,14 @@ def main():
         for event in pygame.event.get(): #catch events
             if event.type ==pygame.QUIT:
                 run = False
+            elif event.type == pygame.USEREVENT+intro_sound.offset_event:
+                if not intro_sound.is_stop_sound:
+                    intro_sound.play_sound()
+            elif event.type ==pygame.USEREVENT+gameplay_sound.offset_event:
+                if not gameplay_sound.is_stop_sound:
+                    gameplay_sound.play_sound()
+            
+                
         
         draw_window() 
                 
