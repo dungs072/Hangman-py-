@@ -13,7 +13,7 @@ import box_message
 import animation
 import sound_manager
 
-
+base_font = pygame.font.Font(None,20)
 WIDTH, HEIGHT = 900,650
 WIN = pygame.display.set_mode((WIDTH,HEIGHT))
 pygame.display.set_caption("Hang man")
@@ -98,11 +98,11 @@ title_text = my_text.My_Text('',300,305,1, background_image= BACKGROUND_TEXT_IMA
 coin_text = my_text.My_Text('',700,25,0.2,background_image=coin_image)
 coin_count_text = my_text.My_Text('0',760,25,0.2,width = 50,height=50)
 answer_text = my_text.My_Text('ANSWER: ',545,233,1)
+#input
+user_name_input = ''
 #create draw circle/x animation
 draw_circle_animations = []
 draw_x_animations = []
-# urgent bug :((
-is_go_into_menu = False
 time_since_last_out_menu = 0
 #level
 can_next_level = True
@@ -125,6 +125,11 @@ for i in range(0,DEFAULT_COIN_PER_LEVEL):
     animation_coins.append(Coin_Animation_Manager(405,400,760,25,15,50))
 # pause
 is_pause = False
+#high score
+is_high_score = False
+is_get_high_score = False
+#input text
+active_input_box = False
 #pop up window
 
 next_box = box_message.Box_message(BOX_MESSAGE_IMAGE,0,310,1,'Assets\\Sounds\\success.mp3')
@@ -184,12 +189,22 @@ def next_level_game():
     create_level()
     #cannot fix this bug right here
     set_can_click_alpha_buttons()
-           
+
+def check_current_score_is_high_score():
+    if len(high_score_list)==0: return True
+    for (name,score) in high_score_list:
+        if score_amount>score:
+            return True
+    return False
 #handle game over
 def game_over():
     global CURRENT_MAN
     global score_amount
+    global is_get_high_score
     CURRENT_MAN = MANS[MAX_CHOICE+1]
+    if(score_amount>0 and check_current_score_is_high_score()):
+        is_get_high_score = True
+        high_score_text.set_title(str(score_amount))
     score_amount = 0
     score_count_text.set_title(str(score_amount))
     over_box.play_sound()
@@ -327,31 +342,48 @@ def draw_game_play():
         suggest_amount_text.draw(WIN)
         suggest_coin_text.draw(WIN)
     cloud_animation1.draw(WIN)
-    pause_button.draw(WIN)
+    
     
     if is_pause:
         pause_menu_ui.draw(WIN)
+    else:
+        pause_button.draw(WIN)
+   
+        
 def draw_menu_UI():
     main_menu.draw(WIN)
     title_ui.draw(WIN)
     pile_ui.draw(WIN,True)
+def draw_input_high_score_UI():
+    input_high_score.draw(WIN)
+    pygame.draw.rect(WIN,color,input_rect,2)
+    text_surface = base_font.render(user_name_input,True,(0,0,0))
+    WIN.blit(text_surface,(375,295))
+def draw_high_score_ui():
+    high_score_title.draw(WIN)
+    rank_title.draw(WIN)
+    score_title.draw(WIN)
+    name_title.draw(WIN)
+    back_button.draw(WIN)
+    for (text1,text2,text3) in high_score_list_ui:
+        text1.draw(WIN)
+        text2.draw(WIN)
+        text3.draw(WIN)
 def draw_window(): 
-    stupid_bug()#huhu
     WIN.fill(WHITE)  
     WIN.blit(BACKGROUND_IMAGE,(0,0))
-    if is_start_game:
-        draw_game_play()
+    if is_get_high_score:
+        draw_input_high_score_UI()
     else:
-        draw_menu_UI()
+        if is_high_score:
+            draw_high_score_ui()
+        else:
+            if is_start_game:
+                draw_game_play()
+            else:
+                draw_menu_UI()
     pygame.display.update()
-def stupid_bug(): #i dont understand why this bug behave like that
-    global is_go_into_menu 
-    if not is_go_into_menu: return
-    if pygame.time.get_ticks()-time_since_last_out_menu>=500:
-        is_go_into_menu = False
-def turn_start_game_on():
-    
-    if is_go_into_menu: return
+def turn_start_game_on(): 
     global is_start_game
     global is_pause
     is_start_game = True
@@ -362,65 +394,155 @@ def turn_start_game_on():
 def turn_start_game_off():
     global is_start_game
     global is_pause
-    global is_go_into_menu
     global time_since_last_out_menu
     is_start_game = False
     is_pause = False
-    is_go_into_menu = True
     time_since_last_out_menu = pygame.time.get_ticks()
     gameplay_sound.stop_sound()
     intro_sound.play_sound()
 def exit_game():
     global run
     run = False
+def high_score_game():
+    global is_high_score
+    is_high_score = True
 def pause_game():
     global is_pause
     is_pause = True
 def unpause_game():
     global is_pause
     is_pause = False
+def back_to_menu_game():
+    global is_high_score
+    is_high_score = False
 def replay_game():
     quizz_manage.clear_all_answers()
     playerr.coin = 100
     score_count_text.set_title('0')
     next_level_game()
+def write_high_score_into_file():
+    highest_score_file = open('top_highest_score.txt','w')
+    for (name,score) in high_score_list:
+        highest_score_file.write(name +' '+str(score)+'\n')
+    highest_score_file.close()
+def load_data_into_ui():
+    for index, (name,score) in enumerate(high_score_list):
+        high_score_list_ui[index][1].set_title(str(score))
+        high_score_list_ui[index][2].set_title(str(name))
+def read_high_score_onto_file():
+    highest_score_file = open('top_highest_score.txt')
+    for line in highest_score_file:
+        temp = line.split()
+        name,score = temp[0], int(temp[1])
+        high_score_list.append((name,score))
+    highest_score_file.close()
+    load_data_into_ui()
+def save_high_score():
+    global is_get_high_score
+    global user_name_input
+    is_get_high_score = False
+    current_score = int(high_score_text.title)
+    if len(user_name_input)==0:
+        user_name_input = 'annonymous'
+    for index,(name,score) in enumerate(high_score_list):
+        if score<=current_score:
+            high_score_list.insert(index,(user_name_input,current_score))
+            break
+    if len(high_score_list)==0:
+        high_score_list.append((user_name_input,current_score))
+    
+    user_name_input = ''
+    if len(high_score_list)>10:
+        high_score_list.pop()
+    load_data_into_ui()
+    write_high_score_into_file()
 def start_menu():
     global main_menu
     global pile_ui
     global title_ui
-    global pause_button
     main_menu = Menu(50,80,0.8,MENU_IMAGE)
     play_button = main_menu.create_button(BACKGROUND_BUTTON_UNCLICKED,30,100,0.8,'PLAY GAME',30,BACKGROUND_BUTTON_CLICKED,500,CLICKED_SOUND_PATH,chanel=2)
     high_score_button = main_menu.create_button(BACKGROUND_BUTTON_UNCLICKED,30,250,0.8,'HIGH SCORES',30,BACKGROUND_BUTTON_CLICKED,500,CLICKED_SOUND_PATH,chanel=2)
     exit_button = main_menu.create_button(BACKGROUND_EXIT_BUTTON_UNCLICKED,30,400,0.8,'EXIT',30,BACKGROUND_EXIT_BUTTON_CLICKED,500,CLICKED_SOUND_PATH,chanel=2)
     title_ui = animation.Animation(HANGMAN_TITLE_IMAGES,170,-10,500)
     pile_ui = animation.Animation(PILE_UI_IMAGES_BIG,500,150,100)
-    pause_button = button.Button(5,100,PAUSE_UNCLICKED,1,'',clicked_image=PAUSE_CLICKED,song_path=CLICKED_SOUND_PATH,wait_time_trigger_event=500,chanel=2)
+   
     play_button.subscribe(turn_start_game_on,False)
     exit_button.subscribe(exit_game,False)
-    pause_button.subscribe(pause_game,False)
+    high_score_button.subscribe(high_score_game,False)
+  
 def pause_menu():
     global pause_menu_ui 
     pause_menu_ui = Menu(235,125,0.6,PAUSE_IMAGE,1.5)  
     pause_menu_ui.create_text('PAUSE',190,25,1,None)
-    resume_button = pause_menu_ui.create_button(BACKGROUND_BUTTON_UNCLICKED,65,60,0.7,'RESUME',30,BACKGROUND_BUTTON_CLICKED,500,CLICKED_SOUND_PATH,chanel = 2)    
-    play_again_button = pause_menu_ui.create_button(BACKGROUND_BUTTON_UNCLICKED,65,160,0.7,'REPLAY',30,BACKGROUND_BUTTON_CLICKED,500,CLICKED_SOUND_PATH,chanel = 2)
-    exit_menu_button = pause_menu_ui.create_button(BACKGROUND_EXIT_BUTTON_UNCLICKED,65,260,0.7,'EXIT MENU',30,BACKGROUND_EXIT_BUTTON_CLICKED,500,CLICKED_SOUND_PATH,chanel=2)
+    resume_button = pause_menu_ui.create_button(BACKGROUND_BUTTON_UNCLICKED,65,60,0.7,'RESUME',30,BACKGROUND_BUTTON_CLICKED,wait_time_trigger_event=500,sound_path=CLICKED_SOUND_PATH,chanel = 2)    
+    play_again_button = pause_menu_ui.create_button(BACKGROUND_BUTTON_UNCLICKED,65,160,0.7,'REPLAY',30,BACKGROUND_BUTTON_CLICKED,wait_time_trigger_event=500,sound_path=CLICKED_SOUND_PATH,chanel = 2)
+    exit_menu_button = pause_menu_ui.create_button(BACKGROUND_EXIT_BUTTON_UNCLICKED,65,260,0.7,'BACK MENU',30,BACKGROUND_EXIT_BUTTON_CLICKED,wait_time_trigger_event=500,sound_path=CLICKED_SOUND_PATH,chanel=2)
     
     resume_button.subscribe(unpause_game,False)
     play_again_button.subscribe(replay_game,False)
     exit_menu_button.subscribe(turn_start_game_off,False)
-
+def high_score_ui():
+    global high_score_title
+    global rank_title
+    global score_title
+    global name_title
+    global back_button
+    global high_score_list_ui
+    global high_score_list
+    high_score_list_ui = []
+    high_score_list= []
+    high_score_title = my_text.My_Text('HIGH SCORE', 450,72,1)
+    rank_title = my_text.My_Text('RANK',223,125,1)
+    score_title = my_text.My_Text('SCORE',450,125,1)
+    name_title = my_text.My_Text('NAME',673,125,1)
+    offset = 40
+    for i in range(1,11):
+        title1 = ''
+        if i == 1:
+            title1 = 'st'
+        elif i==2:
+            title1 = 'nd'
+        elif i==3:
+            title1 = 'rd'
+        else:
+            title1 = 'th'
+        text1 = my_text.My_Text(str(i)+title1,223,i*offset+125,1)
+        text2 = my_text.My_Text('0',450,i*offset+125,1)
+        text3 = my_text.My_Text('NONE',673,i*offset+125,1)
+        high_score_list_ui.append((text1,text2,text3))
+        
+    back_button = button.Button(10,550,BACKGROUND_BUTTON_UNCLICKED,0.5,'BACK',30,clicked_image=BACKGROUND_BUTTON_CLICKED,song_path=CLICKED_SOUND_PATH,wait_time_trigger_event=500,chanel = 2)
+    back_button.subscribe(back_to_menu_game,False)
+    read_high_score_onto_file()
+def create_input_high_score_table():
+    global input_high_score
+    global high_score_text
+    global input_rect
+    global color
+    input_high_score = box_message.Box_message(PAUSE_IMAGE,275,150,0.4,sound_path=CLICKED_SOUND_PATH,y_scale=2) 
+    input_high_score.create_text('CONGRATULATIONs!',170,15,1,size_text=20)
+    input_high_score.create_text('HIGH SCORE: ',110,75,1,size_text=20)
+    high_score_text = input_high_score.create_text('',200,75,1,size_text=20)
+    input_high_score.create_text('NAME: ',75,150,1,size_text=20)
+    input_rect = pygame.Rect(372,285,190,32)
+    color = pygame.Color('lightskyblue3')
+    save_button = input_high_score.create_button(BACKGROUND_BUTTON_UNCLICKED,80,180,0.5,title = 'SAVE',clicked_image=BACKGROUND_BUTTON_CLICKED,sound_path=CLICKED_SOUND_PATH,time_trigger_event=500,channel=2)
+    save_button.subscribe(save_high_score,False)
 def start():
     #player
     global playerr
     global intro_sound
     global gameplay_sound
+    global pause_button
     start_menu()
     pause_menu()
+    high_score_ui()
+    create_input_high_score_table()
     playerr = Player(100)
     coin_count_text.set_title(str(playerr.get_coin()))
     score_count_text.set_title(str(score_amount))
+    
     intro_sound = sound_manager.Sound_manager('Assets\\Sounds\\menu_intro.mp3',3,0.7,1)
     intro_sound.play_sound()
     gameplay_sound = sound_manager.Sound_manager('Assets\\Sounds\\gameplay_sound.mp3',4,0.4,2)
@@ -435,19 +557,20 @@ def start():
             horizontal_offset = 0
             if index==19:
                 horizontal_offset = 2
-    
+    pause_button = button.Button(5,100,PAUSE_UNCLICKED,1,title = '',clicked_image=PAUSE_CLICKED,song_path=CLICKED_SOUND_PATH,wait_time_trigger_event=500,chanel=2)
     #subscribe event for button
     for bt in alpha_button:
         bt.subscribe(on_char_button_clicked)
     next_button.subscribe(next_level_game,False)
     replay_button.subscribe(next_level_game,False)
     suggest_button.subscribe(substract_money_of_player,False)
+    pause_button.subscribe(pause_game,False)
     #subscribe event for coin animation
     for animation_coin in animation_coins:
         animation_coin.subcribe(add_money_to_player)
+        
     #thread
     reset_thread.start()
-    
     create_level()
 def create_level():
     global can_next_level
@@ -464,6 +587,8 @@ def create_level():
 #game loop
 def main():
     global run
+    global user_name_input
+    global active_input_box
     clock = pygame.time.Clock()
     run = True
     start()
@@ -479,8 +604,20 @@ def main():
                 if not gameplay_sound.is_stop_sound:
                     gameplay_sound.play_sound()
             
-                
-        
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if input_rect.collidepoint(event.pos):
+                    active_input_box = True
+                else:
+                    active_input_box = False
+            if active_input_box and is_get_high_score and event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_BACKSPACE:
+                    user_name_input = user_name_input[:-1]
+                elif event.key ==pygame.K_RETURN:
+                    save_high_score()
+                else:
+                    if len(user_name_input)<=20:
+                        user_name_input+= event.unicode
+            
         draw_window() 
                 
     pygame.quit()

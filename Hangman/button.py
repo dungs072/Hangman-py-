@@ -2,7 +2,7 @@ import pygame
 from pygame import mixer
 pygame.font.init()
 class Button():
-    def __init__(self, x,y,image,scale,title = '',size_text = 30,infor = None,count_click = -1,clicked_image = None,song_path = None,wait_time_trigger_event = 0,chanel = 1) -> None:
+    def __init__(self, x,y,image,scale,title = '',size_text = 30,infor = None,count_click = -1,clicked_image = None,song_path = None,wait_time_trigger_event = 0,chanel = 1,need_time_reset = True) -> None:
         width = image.get_width()
         height = image.get_height()
         self.image = pygame.transform.scale(image,(int(width*scale),int(height*scale)))
@@ -17,6 +17,7 @@ class Button():
         self.can_click = True
         self.count_click = count_click
         self.clicked_image = clicked_image
+        self.need_time_reset = need_time_reset
         if clicked_image!=None:
             self.clicked_image = pygame.transform.scale(clicked_image,(int(width*scale),int(height*scale)))
         self.time_since_unclicked = 0
@@ -36,6 +37,7 @@ class Button():
             if pygame.time.get_ticks()-self.time_since_last_trigger_event>=self.wait_time_trigger_event:
                 if self.clicked:
                     self.Trigger_event()
+                    self.clicked = False
         #get mouse position
         pos = pygame.mouse.get_pos()
         #check mouseover and clicked conditions
