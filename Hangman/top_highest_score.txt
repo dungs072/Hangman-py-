@@ -1,2 +1,5 @@
+dung 380
+hoanganh 200
 nhan 200
+hoang 100
 dung 100

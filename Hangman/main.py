@@ -191,7 +191,7 @@ def next_level_game():
     set_can_click_alpha_buttons()
 
 def check_current_score_is_high_score():
-    if len(high_score_list)==0: return True
+    if len(high_score_list)<11: return True
     for (name,score) in high_score_list:
         if score_amount>score:
             return True
@@ -612,6 +612,8 @@ def main():
             if active_input_box and is_get_high_score and event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_BACKSPACE:
                     user_name_input = user_name_input[:-1]
+                elif event.key ==pygame.K_SPACE:
+                    user_name_input = user_name_input
                 elif event.key ==pygame.K_RETURN:
                     save_high_score()
                 else:
