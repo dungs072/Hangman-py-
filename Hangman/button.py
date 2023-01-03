@@ -50,7 +50,7 @@ class Button():
                     self.time_since_last_trigger_event = pygame.time.get_ticks()
                 if self.clicked ==False:
                     self.clicked = True
-                    if self.sound!=None:
+                    if self.sound!=None and self.can_click==True:
                         self.play_sound()
                     if self.event_trigger!=None and self.can_click==True and self.wait_time_trigger_event==0: 
                         self.Trigger_event()

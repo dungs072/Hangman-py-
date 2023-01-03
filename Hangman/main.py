@@ -152,7 +152,7 @@ suggest_coin_text = my_text.My_Text('',747,107,0.1,coin_image)
 def has_right_character_in_answer(char: str):
     global answer
     return [i for i in range(0,len(answer)) if answer[i]==char]
-#START MENY
+#START MENU
 is_start_game = False
 #reset all buttons
 def set_can_click_alpha_buttons():
@@ -161,6 +161,12 @@ def set_can_click_alpha_buttons():
         button.set_can_click(True)
 # create thread
 reset_thread = Thread(target = set_can_click_alpha_buttons,args=[])
+#replay new level game
+def replay_next_level_game():
+    print(playerr.coin)
+    playerr.coin = 100-(amount-count_finish_coin)
+    coin_count_text.set_title(str(playerr.coin))
+    next_level_game()
 #next level game
 def next_level_game():
     global can_next_level
@@ -191,10 +197,11 @@ def next_level_game():
     set_can_click_alpha_buttons()
 
 def check_current_score_is_high_score():
-    if len(high_score_list)<11: return True
+    
     for (name,score) in high_score_list:
         if score_amount>score:
             return True
+    if len(high_score_list)<11: return True
     return False
 #handle game over
 def game_over():
@@ -391,6 +398,7 @@ def turn_start_game_on():
     intro_sound.stop_sound()
     gameplay_sound.play_sound()
     quizz_manage.clear_all_answers()
+    replay_game()
 def turn_start_game_off():
     global is_start_game
     global is_pause
@@ -419,8 +427,10 @@ def replay_game():
     quizz_manage.clear_all_answers()
     playerr.coin = 100
     score_count_text.set_title('0')
+    coin_count_text.set_title(str(playerr.coin))
     next_level_game()
 def write_high_score_into_file():
+   
     highest_score_file = open('top_highest_score.txt','w')
     for (name,score) in high_score_list:
         highest_score_file.write(name +' '+str(score)+'\n')
@@ -444,12 +454,14 @@ def save_high_score():
     current_score = int(high_score_text.title)
     if len(user_name_input)==0:
         user_name_input = 'annonymous'
-    for index,(name,score) in enumerate(high_score_list):
-        if score<=current_score:
-            high_score_list.insert(index,(user_name_input,current_score))
-            break
-    if len(high_score_list)==0:
+    if len(high_score_list)<11 and len(high_score_list)!=10:
         high_score_list.append((user_name_input,current_score))
+    else:
+        for index,(name,score) in enumerate(high_score_list):
+            if score<=current_score:
+                high_score_list.insert(index,(user_name_input,current_score))
+                break
+    
     
     user_name_input = ''
     if len(high_score_list)>10:
@@ -467,7 +479,7 @@ def start_menu():
     title_ui = animation.Animation(HANGMAN_TITLE_IMAGES,170,-10,500)
     pile_ui = animation.Animation(PILE_UI_IMAGES_BIG,500,150,100)
    
-    play_button.subscribe(turn_start_game_on,False)
+    play_button.subscribe(turn_start_game_on,False)#bug
     exit_button.subscribe(exit_game,False)
     high_score_button.subscribe(high_score_game,False)
   
@@ -562,7 +574,7 @@ def start():
     for bt in alpha_button:
         bt.subscribe(on_char_button_clicked)
     next_button.subscribe(next_level_game,False)
-    replay_button.subscribe(next_level_game,False)
+    replay_button.subscribe(replay_next_level_game,False)
     suggest_button.subscribe(substract_money_of_player,False)
     pause_button.subscribe(pause_game,False)
     #subscribe event for coin animation
@@ -571,14 +583,16 @@ def start():
         
     #thread
     reset_thread.start()
-    create_level()
+    #create_level()
 def create_level():
     global can_next_level
     global answer
     global current_answer
     if(can_next_level == False): return
     (title,answer) = quizz_manage.get_quizz()
-    if(title==None and answer==None): return
+    if(title==None and answer==None):
+        quizz_manage.clear_all_answers()
+        (title,answer) = quizz_manage.get_quizz()
     current_answer = [ 0 for i in range(0,len(answer))]
     print(answer)
     can_next_level = False
