@@ -190,10 +190,7 @@ def next_level_game():
     playerr.add_coin(amount-count_finish_coin)
     
     coin_count_text.set_title(str(playerr.get_coin()))
-    
-    
     create_level()
-    #cannot fix this bug right here
     set_can_click_alpha_buttons()
 
 def check_current_score_is_high_score():
@@ -201,7 +198,7 @@ def check_current_score_is_high_score():
     for (name,score) in high_score_list:
         if score_amount>score:
             return True
-    if len(high_score_list)<11: return True
+    if len(high_score_list)<10: return True
     return False
 #handle game over
 def game_over():
