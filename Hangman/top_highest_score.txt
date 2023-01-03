@@ -1,3 +1,4 @@
+vanem 600
 sang12 480
 dungtemp 400
 dung 380
@@ -7,4 +8,3 @@ nhan123 300
 dddd 300
 23432423 200
 dunggg 100
-gyu 100
