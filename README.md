@@ -3,7 +3,7 @@
 + Chọn mục Code trong respo và tải file zip về máy
 + Giải nén và mở source code bằng IDE có hỗ trợ ngôn ngữ python
 # Cách sử dụng source code:
-+ yêu cầu cài pygame
++ yêu cầu cài thư viện pygame
 + chạy game bằng file main.py
 + toàn bộ các chức năng đều được thực thi trong file main.py
 + folder Assets dùng để lưu trữ tài nguyên của game gồm các file png
